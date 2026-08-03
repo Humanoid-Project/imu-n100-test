@@ -31,6 +31,12 @@ struct ImuSample {
   Quat orientation;                 // body -> reference frame
   Euler euler;                      // convenience decomposition of `orientation`
   Vec3 angular_velocity;            // rad/s, body frame, gyro bias removed
+  // Same quantity taken straight from the IMU frame gyro instead of the AHRS
+  // frame's fused rates, bias removed separately. The fused rates carry the
+  // filter's phase lag, while policies trained in Isaac Lab assume a raw body
+  // rate, so compare the two on hardware before choosing one. Only valid when
+  // has_imu_frame is true.
+  Vec3 angular_velocity_raw;        // rad/s, body frame, raw gyro bias removed
   Vec3 linear_acceleration;         // m/s^2, body frame
   Vec3 magnetic_field;              // Tesla, body frame, offsets removed
   Vec3 projected_gravity;           // unit vector, body frame, (0,0,-1) upright
@@ -138,8 +144,14 @@ class ImuDriver {
   // driver is not running or no samples arrived.
   bool calibrateGyroBias(std::chrono::milliseconds duration);
 
+  // Bias of the AHRS fused rates, i.e. of ImuSample::angular_velocity.
   Vec3 gyroBias() const;
   void setGyroBias(const Vec3& bias);
+
+  // Bias of the raw IMU frame gyro, i.e. of ImuSample::angular_velocity_raw.
+  // calibrateGyroBias() measures both in the same pass.
+  Vec3 gyroBiasRaw() const;
+  void setGyroBiasRaw(const Vec3& bias);
 
   // Set when the reader thread aborted on an I/O error. Empty otherwise.
   std::string lastError() const;
@@ -194,6 +206,7 @@ class ImuDriver {
 
   mutable std::mutex bias_mutex_;
   Vec3 gyro_bias_;
+  Vec3 gyro_bias_raw_;
 
   mutable std::mutex error_mutex_;
   std::string last_error_;

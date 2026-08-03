@@ -9,7 +9,7 @@ source install/setup.bash
 ```
 
 ```bash
-ros2 launch imu_gravity orientation_plot.launch.py serial_port:=/dev/ttyACM0
+ros2 launch imu_gravity orientation_plot.launch.py serial_port:=/dev/ttyUSB0
 ```
 
 ## Topic Plot

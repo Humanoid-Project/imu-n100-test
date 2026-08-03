@@ -259,9 +259,11 @@ void ImuDriver::publishSample(DriverStats& delta) {
   sample.projected_gravity = projectedGravity(orientation);
 
   Vec3 bias;
+  Vec3 bias_raw;
   {
     std::lock_guard<std::mutex> lock(bias_mutex_);
     bias = gyro_bias_;
+    bias_raw = gyro_bias_raw_;
   }
   // The reference frame transform does not affect body frame rates, but the
   // mount rotation does. Bias is removed last so it lives in the same frame as
@@ -281,12 +283,17 @@ void ImuDriver::publishSample(DriverStats& delta) {
                                imu_packet_.magnetometer_y * kMilliGaussToTesla,
                                imu_packet_.magnetometer_z * kMilliGaussToTesla} -
                           config_.magnetometer_offset;
+    Vec3 gyroscope{imu_packet_.gyroscope_x,
+                   imu_packet_.gyroscope_y,
+                   imu_packet_.gyroscope_z};
     if (has_mount_rotation_) {
       acceleration = mount_rotation_.rotate(acceleration);
       magnetic_field = mount_rotation_.rotate(magnetic_field);
+      gyroscope = mount_rotation_.rotate(gyroscope);
     }
     sample.linear_acceleration = acceleration;
     sample.magnetic_field = magnetic_field;
+    sample.angular_velocity_raw = gyroscope - bias_raw;
     sample.imu_temperature = imu_packet_.imu_temperature;
     sample.pressure = imu_packet_.pressure;
   }
@@ -353,11 +360,15 @@ void ImuDriver::mergeStats(const DriverStats& delta) {
 bool ImuDriver::calibrateGyroBias(std::chrono::milliseconds duration) {
   if (!isRunning()) return false;
 
+  // Measure against the uncorrected signals.
   setGyroBias(Vec3{0.0, 0.0, 0.0});
+  setGyroBiasRaw(Vec3{0.0, 0.0, 0.0});
 
   const auto deadline = std::chrono::steady_clock::now() + duration;
   Vec3 accumulator;
+  Vec3 accumulator_raw;
   std::uint64_t count = 0;
+  std::uint64_t count_raw = 0;
   std::uint64_t last_seq = 0;
 
   ImuSample sample;
@@ -369,10 +380,17 @@ bool ImuDriver::calibrateGyroBias(std::chrono::milliseconds duration) {
     last_seq = sample.seq;
     accumulator += sample.angular_velocity;
     ++count;
+    if (sample.has_imu_frame) {
+      accumulator_raw += sample.angular_velocity_raw;
+      ++count_raw;
+    }
   }
 
   if (count == 0) return false;
   setGyroBias(accumulator * (1.0 / static_cast<double>(count)));
+  if (count_raw > 0) {
+    setGyroBiasRaw(accumulator_raw * (1.0 / static_cast<double>(count_raw)));
+  }
   return true;
 }
 
@@ -384,6 +402,16 @@ Vec3 ImuDriver::gyroBias() const {
 void ImuDriver::setGyroBias(const Vec3& bias) {
   std::lock_guard<std::mutex> lock(bias_mutex_);
   gyro_bias_ = bias;
+}
+
+Vec3 ImuDriver::gyroBiasRaw() const {
+  std::lock_guard<std::mutex> lock(bias_mutex_);
+  return gyro_bias_raw_;
+}
+
+void ImuDriver::setGyroBiasRaw(const Vec3& bias) {
+  std::lock_guard<std::mutex> lock(bias_mutex_);
+  gyro_bias_raw_ = bias;
 }
 
 std::string ImuDriver::lastError() const {

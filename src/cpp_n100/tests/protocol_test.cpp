@@ -249,6 +249,9 @@ void testDriverDecode() {
   checkClose(sample.linear_acceleration.z, 9.81, 1e-4, "accel z decoded");
   checkClose(sample.linear_acceleration.y, -0.25, 1e-6, "accel y decoded");
   checkClose(sample.angular_velocity.y, -0.02, 1e-6, "angular velocity y decoded");
+  checkClose(sample.angular_velocity_raw.x, 0.1, 1e-6, "raw gyro x comes from the IMU frame");
+  checkClose(sample.angular_velocity_raw.y, 0.2, 1e-6, "raw gyro y comes from the IMU frame");
+  checkClose(sample.angular_velocity_raw.z, 0.3, 1e-6, "raw gyro z comes from the IMU frame");
   checkClose(sample.magnetic_field.x, 100.0e-7, 1e-12, "magnetometer converted to Tesla");
   checkClose(sample.imu_temperature, 31.5, 1e-4, "temperature decoded");
   check(sample.device_timestamp_us == 444555666, "device timestamp taken from AHRS");
@@ -468,6 +471,9 @@ void testMountRotation() {
   checkClose(sample.linear_acceleration.y, 0.25, 1e-4, "accel y is flipped into the base frame");
   checkClose(sample.linear_acceleration.z, -9.81, 1e-4, "accel z is flipped into the base frame");
   checkClose(sample.angular_velocity.z, -0.03, 1e-6, "angular velocity z is flipped");
+  checkClose(sample.angular_velocity_raw.x, 0.1, 1e-6, "raw gyro x is unchanged about the x axis");
+  checkClose(sample.angular_velocity_raw.y, -0.2, 1e-6, "raw gyro y follows the mount rotation");
+  checkClose(sample.angular_velocity_raw.z, -0.3, 1e-6, "raw gyro z follows the mount rotation");
   checkClose(sample.projected_gravity.z, 1.0, 1e-6, "projected gravity follows the mount rotation");
   checkClose(sample.orientation.norm(), 1.0, 1e-9, "orientation stays a unit quaternion");
 

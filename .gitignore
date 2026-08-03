@@ -1,6 +1,7 @@
 .agents/
 .codex/
 .claude/
+.vscode/
 
 build/
 install/

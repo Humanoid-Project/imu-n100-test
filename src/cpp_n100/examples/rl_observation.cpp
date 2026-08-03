@@ -66,8 +66,13 @@ int main(int argc, char** argv) {
       static_cast<std::int64_t>(1e9 / rate_hz));
   auto next_tick = std::chrono::steady_clock::now();
 
+  // Ticks between summary lines, about one second. Clamped to at least 1 so a
+  // sub-1 Hz rate cannot turn the modulo below into a division by zero.
+  const std::uint64_t report_interval =
+      std::max<std::uint64_t>(1, static_cast<std::uint64_t>(rate_hz));
+
   std::vector<double> jitter_us;
-  jitter_us.reserve(static_cast<std::size_t>(rate_hz) * 2 + 8);
+  jitter_us.reserve(static_cast<std::size_t>(report_interval) * 2 + 8);
   std::uint64_t stale_ticks = 0;
   std::uint64_t last_seq = 0;
   std::uint64_t tick = 0;
@@ -96,7 +101,7 @@ int main(int argc, char** argv) {
 
     // --- policy inference would go here, fed with `observation` ---
 
-    if (++tick % static_cast<std::uint64_t>(rate_hz) == 0) {
+    if (++tick % report_interval == 0) {
       std::sort(jitter_us.begin(), jitter_us.end());
       const double p50 = jitter_us[jitter_us.size() / 2];
       const double p99 = jitter_us[(jitter_us.size() * 99) / 100];

@@ -49,6 +49,12 @@ int main(int argc, char** argv) {
   }
   if (!positional.empty()) config.port = positional[0];
   if (positional.size() > 1) config.baudrate = std::atoi(positional[1].c_str());
+  if (positional.size() == 3 || positional.size() == 4) {
+    std::fprintf(stderr,
+                 "the mount rotation needs all three angles: "
+                 "roll pitch yaw, in degrees\n");
+    return 1;
+  }
   if (positional.size() > 4) {
     const double deg = 3.141592653589793 / 180.0;
     config.mount_rotation = n100::Quat::fromEulerZYX(std::atof(positional[2].c_str()) * deg,
@@ -98,7 +104,8 @@ int main(int argc, char** argv) {
         "seq %8llu  %6.1f Hz\n"
         "  quat   w % .4f  x % .4f  y % .4f  z % .4f\n"
         "  rpy    r % 8.2f  p % 8.2f  y % 8.2f  [deg]\n"
-        "  gyro   x % 8.4f  y % 8.4f  z % 8.4f  [rad/s]\n"
+        "  gyro   x % 8.4f  y % 8.4f  z % 8.4f  [rad/s, AHRS fused]\n"
+        "  gyroR  x % 8.4f  y % 8.4f  z % 8.4f  [rad/s, raw]\n"
         "  accel  x % 8.4f  y % 8.4f  z % 8.4f  [m/s^2]\n"
         "  gproj  x % 8.4f  y % 8.4f  z % 8.4f\n"
         "  temp %5.1f C   crc8 %llu  crc16 %llu  sn_lost %llu  dropped %llu\n\n",
@@ -108,6 +115,7 @@ int main(int argc, char** argv) {
         s.euler.pitch * 180.0 / 3.141592653589793,
         s.euler.yaw * 180.0 / 3.141592653589793,
         s.angular_velocity.x, s.angular_velocity.y, s.angular_velocity.z,
+        s.angular_velocity_raw.x, s.angular_velocity_raw.y, s.angular_velocity_raw.z,
         s.linear_acceleration.x, s.linear_acceleration.y, s.linear_acceleration.z,
         s.projected_gravity.x, s.projected_gravity.y, s.projected_gravity.z,
         s.imu_temperature,
