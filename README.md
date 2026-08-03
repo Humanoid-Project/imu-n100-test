@@ -1,14 +1,45 @@
 # IMU N100 Test
 
-ROS2 Humble workspace for testing the WHEELTEC N100 IMU
+Workspace for testing the WHEELTEC N100 IMU
 
-## References
-
-[![Reference: serial-ros2](https://img.shields.io/badge/reference-serial--ros2-181717?logo=github)](https://github.com/RoverRobotics-forks/serial-ros2)
-[![Reference: ros2_wheeltec_n100_imu](https://img.shields.io/badge/reference-ros2__wheeltec__n100__imu-181717?logo=github)](https://github.com/NDHANA94/ros2_wheeltec_n100_imu)
-
+| | Path |
+| --- | --- |
+| ROS2 SDK | [![src/ros2_n100](https://img.shields.io/badge/src-ros2__n100-1f6feb?logo=github&logoColor=white)](src/ros2_n100/) |
+| Cpp SDK | [![src/cpp_n100](https://img.shields.io/badge/src-cpp__n100-1f6feb?logo=github&logoColor=white)](src/cpp_n100/) |
 
 ## Quick Start
+
+### Cpp_N100
+[![README: cpp_n100](https://img.shields.io/badge/README-cpp__n100-1f6feb?logo=markdown&logoColor=white)](src/cpp_n100/README.md)
+
+```bash
+git clone https://github.com/Humanoid-Project/IMU_N100_Test.git
+cd IMU_N100_Test/src/cpp_n100
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
+
+```bash
+# Find the IMU serial port
+ls /dev/ttyUSB* /dev/ttyACM*
+
+# Grant read/write permission
+sudo chmod 666 /dev/ttyUSB0
+```
+
+```bash
+# Sensor state and link statistics
+./build/read_imu /dev/ttyUSB0 921600
+
+# Mount rotation as roll pitch yaw in degrees
+./build/read_imu /dev/ttyUSB0 921600 180 0 0
+
+# 50 Hz control loop
+./build/rl_observation /dev/ttyUSB0 921600 50
+```
+
+### ROS2_Humble_N100
+[![README: ros2_n100](https://img.shields.io/badge/README-ros2__n100-1f6feb?logo=markdown&logoColor=white)](src/ros2_n100/README.md)
 
 ```bash
 git clone https://github.com/Humanoid-Project/IMU_N100_Test.git
@@ -31,103 +62,16 @@ sudo chmod 666 /dev/ttyUSB0
 ros2 run wheeltec_n100_imu imu_node --ros-args -p serial_port:="/dev/ttyUSB0"
 ```
 
-```bash
-# Test
-ros2 topic list
-ros2 topic echo /imu
-```
-
 </br>
 
 ## `/imu` Topic
+[![README: ros2_n100](https://img.shields.io/badge/README-ros2__n100-1f6feb?logo=markdown&logoColor=white)](src/ros2_n100/README.md)
 
-Message type: `sensor_msgs/msg/Imu`
-
-`/imu` is the main topic for the N100 IMU.
-
-```bash
-ros2 topic info /imu
-ros2 topic info /imu -v
-ros2 interface show sensor_msgs/msg/Imu
-```
-
-Typical topic info:
-
-```text
-Type: sensor_msgs/msg/Imu
-Publisher count: 1
-Subscription count: 0
-```
-
-```text
-# ROS timestamp and frame name
-header.stamp
-header.frame_id
-
-# 3D orientation as quaternion
-orientation.x
-orientation.y
-orientation.z
-orientation.w
-
-# Angular velocity in rad/s
-angular_velocity.x
-angular_velocity.y
-angular_velocity.z
-
-# Linear acceleration in m/s^2
-linear_acceleration.x
-linear_acceleration.y
-linear_acceleration.z
-
-# Measurement uncertainty hints
-orientation_covariance
-angular_velocity_covariance
-linear_acceleration_covariance
-```
+## Topic Plot
+[![README: imu_gravity](https://img.shields.io/badge/README-imu__gravity-1f6feb?logo=markdown&logoColor=white)](src/ros2_n100/imu_test/README.md)
 
 </br>
 
-## Topic Plot
-
-Each launch file starts the IMU node and opens `rqt_plot`.
-
-### 1. Orientation
-
-```bash
-ros2 launch imu_gravity orientation_plot.launch.py
-```
-
-Plots `/imu/orientation/x`, `/y`, `/z`, and `/w`.
-
-![Orientation plot](src/imu_test/image/orientation_plot.png)
-
-### 2. Angular Velocity
-
-```bash
-ros2 launch imu_gravity angular_velocity_plot.launch.py
-```
-
-Plots `/imu/angular_velocity/x`, `/y`, and `/z`.
-
-![Angular velocity plot](src/imu_test/image/angular_velocity_plot.png)
-
-### 3. Linear Acceleration
-
-```bash
-ros2 launch imu_gravity linear_acceleration_plot.launch.py
-```
-
-Plots `/imu/linear_acceleration/x`, `/y`, and `/z`.
-
-![Linear acceleration plot](src/imu_test/image/linear_acceleration_plot.png)
-
-### 4. Projected Gravity
-
-```bash
-ros2 launch imu_gravity projected_gravity_plot.launch.py
-```
-
-The `imu_gravity` node subscribes to `/imu` and publishes `/projected_gravity`.
-
-![Projected gravity plot](src/imu_test/image/projected_gravity_plot.png)
+## References
+[![Reference: serial-ros2](https://img.shields.io/badge/reference-serial--ros2-181717?logo=github)](https://github.com/RoverRobotics-forks/serial-ros2)
+[![Reference: ros2_wheeltec_n100_imu](https://img.shields.io/badge/reference-ros2__wheeltec__n100__imu-181717?logo=github)](https://github.com/NDHANA94/ros2_wheeltec_n100_imu)

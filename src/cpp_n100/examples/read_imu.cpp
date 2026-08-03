@@ -1,0 +1,92 @@
+// Prints the decoded IMU state and link statistics.
+//
+//   ./read_imu [port] [baudrate] [mount_roll_deg mount_pitch_deg mount_yaw_deg]
+//
+// Use the mount angles to find the rotation from the IMU case to the robot
+// base: with the robot upright, the correct values make gproj read (0, 0, -1).
+
+#include <csignal>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <thread>
+
+#include "n100/imu_driver.hpp"
+
+namespace {
+volatile std::sig_atomic_t g_stop = 0;
+void onSignal(int) { g_stop = 1; }
+}  // namespace
+
+int main(int argc, char** argv) {
+  n100::DriverConfig config;
+  if (argc > 1) config.port = argv[1];
+  if (argc > 2) config.baudrate = std::atoi(argv[2]);
+  if (argc > 5) {
+    const double deg = 3.141592653589793 / 180.0;
+    config.mount_rotation = n100::Quat::fromEulerZYX(
+        std::atof(argv[3]) * deg, std::atof(argv[4]) * deg, std::atof(argv[5]) * deg);
+  }
+
+  std::signal(SIGINT, onSignal);
+  std::signal(SIGTERM, onSignal);
+
+  n100::ImuDriver driver(config);
+  try {
+    driver.start();
+  } catch (const std::exception& e) {
+    std::fprintf(stderr, "failed to start driver: %s\n", e.what());
+    return 1;
+  }
+  std::printf("reading %s at %d baud, Ctrl-C to stop\n\n",
+              config.port.c_str(), config.baudrate);
+
+  auto last_report = std::chrono::steady_clock::now();
+  std::uint64_t last_samples = 0;
+
+  while (!g_stop && driver.isRunning()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    n100::ImuSample s;
+    if (!driver.latest(s)) {
+      std::printf("waiting for data...\n");
+      continue;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    const double elapsed = std::chrono::duration<double>(now - last_report).count();
+    const n100::DriverStats st = driver.stats();
+    const double rate = elapsed > 0.0 ? (st.samples - last_samples) / elapsed : 0.0;
+    last_report = now;
+    last_samples = st.samples;
+
+    std::printf(
+        "seq %8llu  %6.1f Hz\n"
+        "  quat   w % .4f  x % .4f  y % .4f  z % .4f\n"
+        "  rpy    r % 8.2f  p % 8.2f  y % 8.2f  [deg]\n"
+        "  gyro   x % 8.4f  y % 8.4f  z % 8.4f  [rad/s]\n"
+        "  accel  x % 8.4f  y % 8.4f  z % 8.4f  [m/s^2]\n"
+        "  gproj  x % 8.4f  y % 8.4f  z % 8.4f\n"
+        "  temp %5.1f C   crc8 %llu  crc16 %llu  sn_lost %llu  dropped %llu\n\n",
+        static_cast<unsigned long long>(s.seq), rate,
+        s.orientation.w, s.orientation.x, s.orientation.y, s.orientation.z,
+        s.euler.roll * 180.0 / 3.141592653589793,
+        s.euler.pitch * 180.0 / 3.141592653589793,
+        s.euler.yaw * 180.0 / 3.141592653589793,
+        s.angular_velocity.x, s.angular_velocity.y, s.angular_velocity.z,
+        s.linear_acceleration.x, s.linear_acceleration.y, s.linear_acceleration.z,
+        s.projected_gravity.x, s.projected_gravity.y, s.projected_gravity.z,
+        s.imu_temperature,
+        static_cast<unsigned long long>(st.crc8_errors),
+        static_cast<unsigned long long>(st.crc16_errors),
+        static_cast<unsigned long long>(st.sn_lost),
+        static_cast<unsigned long long>(st.dropped_bytes));
+  }
+
+  if (!driver.lastError().empty()) {
+    std::fprintf(stderr, "reader stopped: %s\n", driver.lastError().c_str());
+  }
+  driver.stop();
+  return 0;
+}

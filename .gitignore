@@ -1,3 +1,9 @@
-/build/
-/install/
-/log/
+.agents/
+.codex/
+.claude/
+
+build/
+install/
+log/
+
+src/cpp_n100/build/
