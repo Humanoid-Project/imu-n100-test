@@ -1,9 +1,13 @@
 // Prints the decoded IMU state and link statistics.
 //
 //   ./read_imu [port] [baudrate] [mount_roll_deg mount_pitch_deg mount_yaw_deg]
+//              [--rate HZ]
 //
 // Use the mount angles to find the rotation from the IMU case to the robot
 // base: with the robot upright, the correct values make gproj read (0, 0, -1).
+//
+// --rate sets how often the block below is printed, 10 Hz by default. It does
+// not change how fast the device streams, which is fixed at about 100 Hz.
 
 #include <csignal>
 #include <cmath>
@@ -11,6 +15,7 @@
 #include <cstdlib>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "n100/imu_driver.hpp"
 
@@ -21,12 +26,34 @@ void onSignal(int) { g_stop = 1; }
 
 int main(int argc, char** argv) {
   n100::DriverConfig config;
-  if (argc > 1) config.port = argv[1];
-  if (argc > 2) config.baudrate = std::atoi(argv[2]);
-  if (argc > 5) {
+  double rate_hz = 10.0;
+
+  // --rate may appear anywhere, so the positional arguments keep their meaning.
+  std::vector<std::string> positional;
+  for (int i = 1; i < argc; ++i) {
+    const std::string arg = argv[i];
+    if (arg == "--rate") {
+      if (i + 1 >= argc) {
+        std::fprintf(stderr, "--rate needs a value in Hz\n");
+        return 1;
+      }
+      rate_hz = std::atof(argv[++i]);
+      continue;
+    }
+    positional.push_back(arg);
+  }
+
+  if (rate_hz <= 0.0) {
+    std::fprintf(stderr, "--rate must be positive\n");
+    return 1;
+  }
+  if (!positional.empty()) config.port = positional[0];
+  if (positional.size() > 1) config.baudrate = std::atoi(positional[1].c_str());
+  if (positional.size() > 4) {
     const double deg = 3.141592653589793 / 180.0;
-    config.mount_rotation = n100::Quat::fromEulerZYX(
-        std::atof(argv[3]) * deg, std::atof(argv[4]) * deg, std::atof(argv[5]) * deg);
+    config.mount_rotation = n100::Quat::fromEulerZYX(std::atof(positional[2].c_str()) * deg,
+                                                     std::atof(positional[3].c_str()) * deg,
+                                                     std::atof(positional[4].c_str()) * deg);
   }
 
   std::signal(SIGINT, onSignal);
@@ -39,14 +66,20 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "failed to start driver: %s\n", e.what());
     return 1;
   }
-  std::printf("reading %s at %d baud, Ctrl-C to stop\n\n",
-              config.port.c_str(), config.baudrate);
+  std::printf("reading %s at %d baud, printing at %g Hz, Ctrl-C to stop\n\n",
+              config.port.c_str(), config.baudrate, rate_hz);
 
   auto last_report = std::chrono::steady_clock::now();
   std::uint64_t last_samples = 0;
 
+  // Absolute schedule, so printing time does not push the period out.
+  const auto period = std::chrono::nanoseconds(
+      static_cast<std::int64_t>(1e9 / rate_hz));
+  auto next_tick = std::chrono::steady_clock::now();
+
   while (!g_stop && driver.isRunning()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    next_tick += period;
+    std::this_thread::sleep_until(next_tick);
 
     n100::ImuSample s;
     if (!driver.latest(s)) {

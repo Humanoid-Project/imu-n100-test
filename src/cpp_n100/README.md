@@ -16,13 +16,17 @@ sudo chmod 666 /dev/ttyUSB0
 ```
 
 ```bash
-# Sensor state and link statistics
+# Sensor state and link statistics, printed at 10 Hz
 ./build/read_imu /dev/ttyUSB0 921600
 
 # Mount rotation as roll pitch yaw in degrees
 ./build/read_imu /dev/ttyUSB0 921600 180 0 0
 
-# 50 Hz control loop
+# Print rate in Hz. Does not change the device stream, which is fixed near 100 Hz
+./build/read_imu /dev/ttyUSB0 921600 --rate 2
+./build/read_imu /dev/ttyUSB0 921600 180 0 0 --rate 20
+
+# 50 Hz control loop, prints a timing summary once a second
 ./build/rl_observation /dev/ttyUSB0 921600 50
 ```
 
