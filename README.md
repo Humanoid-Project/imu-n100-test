@@ -13,7 +13,7 @@ Workspace for testing the WHEELTEC N100 IMU
 [![README: cpp_n100](https://img.shields.io/badge/README-cpp__n100-1f6feb?logo=markdown&logoColor=white)](src/cpp_n100/README.md)
 
 ```bash
-git clone https://github.com/Humanoid-Project/IMU_N100_Test.git
+git clone https://github.com/Humanoid-Project/imu-n100-test.git IMU_N100_Test
 cd IMU_N100_Test/src/cpp_n100
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
@@ -42,7 +42,7 @@ sudo chmod 666 /dev/ttyUSB0
 [![README: ros2_n100](https://img.shields.io/badge/README-ros2__n100-1f6feb?logo=markdown&logoColor=white)](src/ros2_n100/README.md)
 
 ```bash
-git clone https://github.com/Humanoid-Project/IMU_N100_Test.git
+git clone https://github.com/Humanoid-Project/imu-n100-test.git IMU_N100_Test
 cd IMU_N100_Test
 source /opt/ros/humble/setup.bash
 colcon build
