@@ -53,6 +53,7 @@ ImuDriver::~ImuDriver() { stop(); }
 
 void ImuDriver::start() {
   if (running_.load(std::memory_order_acquire)) return;
+  if (reader_.joinable()) reader_.join();
 
   port_.open(config_.port, config_.baudrate, config_.low_latency);
 
