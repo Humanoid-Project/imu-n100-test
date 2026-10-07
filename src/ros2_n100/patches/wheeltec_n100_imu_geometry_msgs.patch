@@ -1,0 +1,28 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,6 +20,7 @@
+ find_package(rclcpp REQUIRED)
+ find_package(sensor_msgs REQUIRED)
+ find_package(std_msgs REQUIRED)
++find_package(geometry_msgs REQUIRED)
+ find_package(serial REQUIRED)
+ find_package(Eigen3 REQUIRED)
+ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+@@ -36,6 +37,7 @@
+   rclcpp
+   sensor_msgs
+   std_msgs
++  geometry_msgs
+   serial
+   Eigen3
+   tf2
+--- a/package.xml
++++ b/package.xml
+@@ -15,6 +15,7 @@
+   <depend>rclcpp</depend>
+   <depend>std_msgs</depend>
+   <depend>sensor_msgs</depend>
++  <depend>geometry_msgs</depend>
+   <depend>tf2</depend>
+   <depend>rcl_interfaces</depend>
+   <export>

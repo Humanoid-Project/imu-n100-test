@@ -1,0 +1,9 @@
+RoboNex IMU N100 Test
+Copyright 2026 RoboNex
+
+This product includes software developed by RoboNex (src/cpp_n100, src/ros2_n100/imu_test).
+
+The ROS 2 driver ros2_wheeltec_n100_imu (https://github.com/NDHANA94/ros2_wheeltec_n100_imu) and serial-ros2
+(https://github.com/RoverRobotics-forks/serial-ros2, MIT License, from wjwwood/serial) are third-party projects.
+They are not included in this repository; README.md shows how to clone them into src/ros2_n100/.
+WHEELTEC is a trademark of its owner.

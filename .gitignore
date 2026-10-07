@@ -9,3 +9,6 @@ install/
 log/
 
 src/cpp_n100/build/
+# Third-party ROS 2 packages (clone them, see README)
+src/ros2_n100/ros2_wheeltec_n100_imu/
+src/ros2_n100/serial-ros2/

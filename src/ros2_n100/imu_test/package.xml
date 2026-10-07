@@ -5,7 +5,7 @@
   <version>0.0.1</version>
   <description>Projected gravity test node for IMU data.</description>
   <maintainer email="polygon@example.com">polygon</maintainer>
-  <license>MIT</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
 
